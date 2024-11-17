@@ -5,49 +5,49 @@ apt update -y && apt upgrade -y
 apt install grub2 wimtools ntfs-3g -y
 
 #Get the disk size in GB and convert to MB
-disk_size_gb=$(parted /dev/nvme0n1 --script print | awk '/^Disk \/dev\/nvme0n1:/ {print int($3)}')
+disk_size_gb=$(parted /dev/nvme0n1p1 --script print | awk '/^Disk \/dev\/nvme0n1p1:/ {print int($3)}')
 disk_size_mb=$((disk_size_gb * 1024))
 
 #Calculate partition size (25% of total size)
 part_size_mb=$((disk_size_mb / 4))
 
 #Create GPT partition table
-parted /dev/nvme0n1 --script -- mklabel gpt
+parted /dev/nvme0n1p1 --script -- mklabel gpt
 
 #Create two partitions
-parted /dev/nvme0n1 --script -- mkpart primary ntfs 1MB ${part_size_mb}MB
-parted /dev/nvme0n1 --script -- mkpart primary ntfs ${part_size_mb}MB $((2 * part_size_mb))MB
+parted /dev/nvme0n1p1 --script -- mkpart primary ntfs 1MB ${part_size_mb}MB
+parted /dev/nvme0n1p1 --script -- mkpart primary ntfs ${part_size_mb}MB $((2 * part_size_mb))MB
 
 #Inform kernel of partition table changes
-partprobe /dev/nvme0n1
+partprobe /dev/nvme0n1p1
 
 sleep 30
 
-partprobe /dev/nvme0n1
+partprobe /dev/nvme0n1p1
 
 sleep 30
 
-partprobe /dev/nvme0n1
+partprobe /dev/nvme0n1p1
 
 sleep 30 
 
 #Format the partitions
-mkfs.ntfs -f /dev/nvme0n11
-mkfs.ntfs -f /dev/nvme0n12
+mkfs.ntfs -f /dev/nvme0n1p11
+mkfs.ntfs -f /dev/nvme0n1p12
 
 echo "NTFS partitions created"
 
-echo -e "r\ng\np\nw\nY\n" | gdisk /dev/nvme0n1
+echo -e "r\ng\np\nw\nY\n" | gdisk /dev/nvme0n1p1
 
-mount /dev/nvme0n11 /mnt
+mount /dev/nvme0n1p11 /mnt
 
 #Prepare directory for the Windows disk
 cd ~
 mkdir windisk
 
-mount /dev/nvme0n12 windisk
+mount /dev/nvme0n1p12 windisk
 
-grub-install --root-directory=/mnt /dev/nvme0n1
+grub-install --root-directory=/mnt /dev/nvme0n1p1
 
 #Edit GRUB configuration
 cd /mnt/boot/grub
